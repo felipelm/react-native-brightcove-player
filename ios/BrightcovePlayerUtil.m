@@ -40,19 +40,18 @@ RCT_EXPORT_MODULE();
 RCT_EXPORT_METHOD(requestDownloadVideoWithReferenceId:(NSString *)referenceId accountId:(NSString *)accountId policyKey:(NSString *)policyKey bitRate:(nonnull NSNumber *)bitRate resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
     [BrightcovePlayerOfflineVideoManager sharedManager].delegate = self;
     BCOVPlaybackService* playbackService = [[BCOVPlaybackService alloc] initWithAccountId:accountId policyKey:policyKey];
-    [playbackService findVideoWithReferenceID:referenceId parameters:nil completion:^(BCOVVideo *video, NSDictionary *jsonResponse, NSError *error) {
+    [playbackService findVideoWithReferenceID:referenceId parameters:nil completionHandler:^(BCOVVideo *video, NSDictionary *jsonResponse, NSError *error) {
         if (error) {
-            reject(kErrorCode, error.description, error);
+            reject(kErrorCode, error.localizedDescription, error);
             return;
         }
-        [[BrightcovePlayerOfflineVideoManager sharedManager] requestVideoDownload:video mediaSelections: nil parameters:[self generateDownloadParameterWithBitRate:bitRate] completion:^(BCOVOfflineVideoToken offlineVideoToken, NSError *error) {
+        [[BrightcovePlayerOfflineVideoManager sharedManager] requestVideoDownload:video mediaSelections:nil parameters:[self generateDownloadParameterWithBitRate:bitRate] completion:^(BCOVOfflineVideoToken offlineVideoToken, NSError *error) {
             if (error) {
-                reject(kErrorCode, error.description, error);
+                reject(kErrorCode, error.localizedDescription, error);
                 return;
             }
-            [NSUserDefaults.standardUserDefaults setObject: @{kUserDefaultKeyOfflineAccountId: accountId,
-                                                              kUserDefaultKeyOfflineVideoId: video.properties[kBCOVVideoPropertyKeyId]
-                                                              }
+            [NSUserDefaults.standardUserDefaults setObject:@{kUserDefaultKeyOfflineAccountId: accountId,
+                                                             kUserDefaultKeyOfflineVideoId: video.properties[kBCOVVideoPropertyKeyId]}
                                                     forKey:[kUserDefaultKeyOfflinePrefix stringByAppendingString:offlineVideoToken]];
             [NSUserDefaults.standardUserDefaults synchronize];
             [self sendOfflineNotification];
@@ -63,26 +62,21 @@ RCT_EXPORT_METHOD(requestDownloadVideoWithReferenceId:(NSString *)referenceId ac
 
 RCT_EXPORT_METHOD(requestDownloadVideoWithVideoId:(NSString *)videoId accountId:(NSString *)accountId policyKey:(NSString *)policyKey bitRate:(nonnull NSNumber *)bitRate resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
     BCOVPlaybackService* playbackService = [[BCOVPlaybackService alloc] initWithAccountId:accountId policyKey:policyKey];
-    [playbackService findVideoWithVideoID:videoId parameters:nil completion:^(BCOVVideo *video, NSDictionary *jsonResponse, NSError *error) {
+    [playbackService findVideoWithVideoID:videoId parameters:nil completionHandler:^(BCOVVideo *video, NSDictionary *jsonResponse, NSError *error) {
         if (error) {
-            reject(kErrorCode, error.description, error);
+            reject(kErrorCode, error.localizedDescription, error);
             return;
         }
         [BrightcovePlayerOfflineVideoManager sharedManager].delegate = self;
-        [BrightcovePlayerOfflineVideoManager.sharedManager
-        preloadFairPlayLicense:video
-        parameters:[self generateDownloadParameterWithBitRate:bitRate]
-        completion:^(BCOVOfflineVideoToken offlineVideoToken, NSError *error) {
-            
+        [[BrightcovePlayerOfflineVideoManager sharedManager] preloadFairPlayLicense:video parameters:[self generateDownloadParameterWithBitRate:bitRate] completion:^(BCOVOfflineVideoToken offlineVideoToken, NSError *error) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                [[BrightcovePlayerOfflineVideoManager sharedManager] requestVideoDownload:video mediaSelections: nil parameters:[self generateDownloadParameterWithBitRate:bitRate] completion:^(BCOVOfflineVideoToken offlineVideoToken, NSError *error) {
+                [[BrightcovePlayerOfflineVideoManager sharedManager] requestVideoDownload:video mediaSelections:nil parameters:[self generateDownloadParameterWithBitRate:bitRate] completion:^(BCOVOfflineVideoToken offlineVideoToken, NSError *error) {
                     if (error) {
-                        reject(kErrorCode, error.description, error);
+                        reject(kErrorCode, error.localizedDescription, error);
                         return;
                     }
-                    [NSUserDefaults.standardUserDefaults setObject: @{kUserDefaultKeyOfflineAccountId: accountId,
-                                                                      kUserDefaultKeyOfflineVideoId: video.properties[kBCOVVideoPropertyKeyId]
-                                                                      }
+                    [NSUserDefaults.standardUserDefaults setObject:@{kUserDefaultKeyOfflineAccountId: accountId,
+                                                                     kUserDefaultKeyOfflineVideoId: video.properties[kBCOVVideoPropertyKeyId]}
                                                             forKey:[kUserDefaultKeyOfflinePrefix stringByAppendingString:offlineVideoToken]];
                     [NSUserDefaults.standardUserDefaults synchronize];
                     [self sendOfflineNotification];
@@ -113,9 +107,9 @@ RCT_EXPORT_METHOD(deleteOfflineVideo:(NSString *)accountId policyKey:(NSString *
 
 RCT_EXPORT_METHOD(getPlaylistWithPlaylistId:(NSString *)playlistId accountId:(NSString *)accountId policyKey:(NSString *)policyKey resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
     BCOVPlaybackService* playbackService = [[BCOVPlaybackService alloc] initWithAccountId:accountId policyKey:policyKey];
-    [playbackService findPlaylistWithPlaylistID:playlistId parameters:nil completion:^(BCOVPlaylist *playlist, NSDictionary *jsonResponse, NSError *error) {
+    [playbackService findPlaylistWithPlaylistID:playlistId parameters:nil completionHandler:^(BCOVPlaylist *playlist, NSDictionary *jsonResponse, NSError *error) {
         if (error) {
-            reject(kErrorCode, error.description, error);
+            reject(kErrorCode, error.localizedDescription, error);
             return;
         }
         resolve([self collectPlaylist:playlist]);
@@ -124,9 +118,9 @@ RCT_EXPORT_METHOD(getPlaylistWithPlaylistId:(NSString *)playlistId accountId:(NS
 
 RCT_EXPORT_METHOD(getPlaylistWithReferenceId:(NSString *)referenceId accountId:(NSString *)accountId policyKey:(NSString *)policyKey resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
     BCOVPlaybackService* playbackService = [[BCOVPlaybackService alloc] initWithAccountId:accountId policyKey:policyKey];
-    [playbackService findPlaylistWithReferenceID:referenceId parameters:nil completion:^(BCOVPlaylist *playlist, NSDictionary *jsonResponse, NSError *error) {
+    [playbackService findPlaylistWithReferenceID:referenceId parameters:nil completionHandler:^(BCOVPlaylist *playlist, NSDictionary *jsonResponse, NSError *error) {
         if (error) {
-            reject(kErrorCode, error.description, error);
+            reject(kErrorCode, error.localizedDescription, error);
             return;
         }
         resolve([self collectPlaylist:playlist]);
@@ -153,18 +147,9 @@ RCT_EXPORT_METHOD(getPlaylistWithReferenceId:(NSString *)referenceId accountId:(
 - (NSArray *)collectPlaylist:(BCOVPlaylist *)playlist {
     NSMutableArray *videos = [[NSMutableArray alloc] init];
     for (BCOVVideo *video in playlist.videos) {
-        NSString *name = video.properties[kBCOVVideoPropertyKeyName];
-        if (!name) {
-            name = @"";
-        }
-        NSString *description = video.properties[kBCOVVideoPropertyKeyDescription];
-        if (!description) {
-            description = @"";
-        }
-	NSString *referenceId = video.properties[kBCOVVideoPropertyKeyReferenceId];
-        if (!referenceId) {
-            referenceId = @"";
-        }
+        NSString *name = video.properties[kBCOVVideoPropertyKeyName] ?: @"";
+        NSString *description = video.properties[kBCOVVideoPropertyKeyDescription] ?: @"";
+        NSString *referenceId = video.properties[kBCOVVideoPropertyKeyReferenceId] ?: @"";
         [videos addObject:
          @{
            kPlaylistAccountId: video.properties[kBCOVVideoPropertyKeyAccountId],
@@ -181,13 +166,15 @@ RCT_EXPORT_METHOD(getPlaylistWithReferenceId:(NSString *)referenceId accountId:(
 - (NSDictionary *)generateDownloadParameterWithBitRate:(NSNumber*)bitRate {
     return
     @{
-      // Purchase license
+      // Purchase license (check if this key is still valid in the latest SDK)
       kBCOVFairPlayLicensePurchaseKey: @(YES),
-        
+
       // Specify variant using the bitrate
       kBCOVOfflineVideoManagerRequestedBitrateKey: bitRate
       };
 }
+
+#pragma mark - BCOVOfflineVideoManagerDelegate Methods
 
 - (void)offlineVideoToken:(BCOVOfflineVideoToken)offlineVideoToken
              downloadTask:(AVAssetDownloadTask *)downloadTask
@@ -196,9 +183,9 @@ RCT_EXPORT_METHOD(getPlaylistWithReferenceId:(NSString *)referenceId accountId:(
 }
 
 - (void)offlineVideoToken:(BCOVOfflineVideoToken)offlineVideoToken
-aggregateDownloadTask:(AVAggregateAssetDownloadTask *)aggregateDownloadTask
-        didProgressTo:(NSTimeInterval)progressPercent
-    forMediaSelection:(AVMediaSelection *)mediaSelection NS_AVAILABLE_IOS(11_0) {
+    aggregateDownloadTask:(AVAggregateAssetDownloadTask *)aggregateDownloadTask
+            didProgressTo:(NSTimeInterval)progressPercent
+        forMediaSelection:(AVMediaSelection *)mediaSelection NS_AVAILABLE_IOS(11_0) {
     [self sendOfflineNotification];
 }
 
@@ -213,3 +200,4 @@ aggregateDownloadTask:(AVAggregateAssetDownloadTask *)aggregateDownloadTask
 }
 
 @end
+
